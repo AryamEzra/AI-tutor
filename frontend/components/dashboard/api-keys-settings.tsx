@@ -41,9 +41,10 @@ export function APIKeysSettings() {
 
   const fetchKeys = async () => {
     if (!token) return
-    
+    const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "")
+
     try {
-      const response = await fetch("/api/settings/api-keys", {
+      const response = await fetch(`${API_BASE}/settings/api-keys`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -71,7 +72,9 @@ export function APIKeysSettings() {
     setSuccess(null)
 
     try {
-      const response = await fetch("/api/settings/api-keys", {
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "")
+
+      const response = await fetch(`${API_BASE}/settings/api-keys`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

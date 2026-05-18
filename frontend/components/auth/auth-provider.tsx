@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async (authToken: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/me`, {
+      const response = await fetch(`${API_BASE}/auth/me`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${API_BASE}/api/auth/login`, {
+    const response = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, name?: string) => {
-    const response = await fetch(`${API_BASE}/api/auth/register`, {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
