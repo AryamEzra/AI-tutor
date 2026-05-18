@@ -1,14 +1,21 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import Providers from '@/components/providers'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const geistSans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+});
 
 export const metadata: Metadata = {
-  title: 'Socratic Tutor - Learn by Asking Questions',
-  description: 'AI-powered Socratic tutoring that helps you learn through guided questions and discussion',
+  title: 'Socratic Tutor - Your AI Study Companion',
+  description: 'Generate exams, create flash cards, summarize notes, and get AI-powered tutoring assistance.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -29,17 +36,23 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#f59e0b',
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="font-sans antialiased bg-background">
-        <Providers>
+    <html lang="en" className="bg-background">
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <AuthProvider>
           {children}
-        </Providers>
+        </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

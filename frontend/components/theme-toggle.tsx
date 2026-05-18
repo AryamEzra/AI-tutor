@@ -1,30 +1,41 @@
 "use client"
 
-import * as React from "react"
-import { useTheme } from "next-themes"
-import { Sun, Moon } from "lucide-react"
-import { Button } from "./ui/button"
+import { useEffect, useState } from "react"
+import { Moon, Sun } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
+  const [theme, setTheme] = useState<"light" | "dark">("light")
 
-  React.useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    const initialTheme = savedTheme || systemTheme
+    setTheme(initialTheme)
+    document.documentElement.classList.toggle("dark", initialTheme === "dark")
+  }, [])
 
-  if (!mounted) return null
-
-  const isDark = resolvedTheme === "dark"
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light"
+    setTheme(newTheme)
+    localStorage.setItem("theme", newTheme)
+    document.documentElement.classList.toggle("dark", newTheme === "dark")
+  }
 
   return (
     <Button
       variant="ghost"
-      size="sm"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label="Toggle theme"
+      size="icon"
+      onClick={toggleTheme}
+      className="h-9 w-9"
+      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
     >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {theme === "light" ? (
+        <Moon className="h-4 w-4" />
+      ) : (
+        <Sun className="h-4 w-4" />
+      )}
     </Button>
   )
 }
-
-export default ThemeToggle

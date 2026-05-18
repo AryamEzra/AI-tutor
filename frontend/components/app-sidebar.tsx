@@ -1,19 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Upload,
-  BookOpen,
-  Settings,
-  CreditCard,
-  ChevronDown,
-  Sparkles,
-  Headphones,
-  LogOut,
-} from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +18,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,108 +28,83 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/components/auth/auth-provider"
-import ThemeToggle from "@/components/theme-toggle"
+import {
+  Headphones,
+  LayoutDashboard,
+  FileText,
+  NotebookText,
+  Headset,
+  CreditCard,
+  Sparkles,
+  MessageCircle,
+  Settings,
+  ChevronUp,
+  ChevronDown,
+  LogOut,
+  ImageIcon,
+  RotateCcw,
+} from "lucide-react"
 
-const homeItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-  },
-]
-
-const learningItems = [
-  {
-    title: "Upload Documents",
-    url: "/dashboard/upload",
-    icon: Upload,
-  },
-  {
-    title: "My Knowledge Base",
-    url: "/dashboard/knowledge",
-    icon: BookOpen,
-  },
-]
-
-const chatItems = [
-  {
-    title: "New Chat",
-    url: "/dashboard/chat",
-    icon: MessageSquare,
-  },
-  {
-    title: "Chat History",
-    url: "/dashboard/chat/history",
-    icon: MessageSquare,
-  },
-]
-
-const settingsItems = [
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: Settings,
-  },
-  {
-    title: "API Keys",
-    url: "/dashboard/settings/api-keys",
-    icon: CreditCard,
-  },
+const studyTools = [
+  { title: "Exam Generator", href: "/dashboard/exam-generator", icon: FileText },
+  { title: "Short Notes Generator", href: "/dashboard/short-notes", icon: NotebookText },
+  { title: "Notes To Audio", href: "/dashboard/notes-to-audio", icon: Headset },
+  { title: "Flash Cards Generator", href: "/dashboard/flash-cards", icon: CreditCard },
+  { title: "Try Equations", href: "/dashboard/try-equations", icon: ImageIcon },
+  { title: "Retry Past Exams", href: "/dashboard/retry-exams", icon: RotateCcw },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
 
-  const userInitial = user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"
-  const userName = user?.name || user?.email?.split("@")[0] || "Guest User"
-  const userEmail = user?.email || "guest@example.com"
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+  }
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
+    <Sidebar className="border-r border-sidebar-border h-screen flex flex-col">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Headphones className="h-6 w-6 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
+            <Headphones className="h-5 w-5 text-amber-500" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">Socratic Tutor</h1>
-            <p className="text-xs text-muted-foreground">Free</p>
+            <span className="font-semibold text-foreground">Socratic Tutor</span>
+            <span className="block text-xs text-muted-foreground">Free</span>
           </div>
         </Link>
-        
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="flex flex-1 overflow-y-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
             Home
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {homeItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard"}
+                >
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Learning
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+            Exam Time
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -147,18 +112,22 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton>
-                      <BookOpen className="h-4 w-4" />
+                      <FileText className="h-4 w-4" />
                       <span>Study Tools</span>
                       <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {learningItems.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild isActive={pathname === item.url}>
-                            <Link href={item.url}>
-                              <span>{item.title}</span>
+                      {studyTools.map((tool) => (
+                        <SidebarMenuSubItem key={tool.href}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === tool.href}
+                          >
+                            <Link href={tool.href}>
+                              <tool.icon className="h-4 w-4" />
+                              <span>{tool.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -167,7 +136,6 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
-
               <Collapsible defaultOpen className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -179,15 +147,17 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {chatItems.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild isActive={pathname === item.url}>
-                            <Link href={item.url}>
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/dashboard/chat"}
+                        >
+                          <Link href="/dashboard/chat">
+                            <MessageCircle className="h-4 w-4" />
+                            <span>Chat</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
@@ -197,56 +167,48 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
             Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/settings"}
+                >
+                  <Link href="/dashboard/settings">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center justify-between gap-2">
-          <ThemeToggle />
-          <DropdownMenu>
+      <SidebarFooter className="border-t border-sidebar-border p-2 -mt-4 pb-6">
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-3 rounded-md p-2 hover:bg-sidebar-accent transition-colors">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-sidebar-foreground">{userName}</p>
-                <p className="text-xs text-muted-foreground">{userEmail}</p>
+            <Button variant="ghost" className="w-full justify-start gap-2 px-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </button>
+              <div className="flex flex-1 flex-col items-start text-left">
+                <span className="text-sm font-medium">{user?.name || user?.email?.split("@")[0] || "User"}</span>
+                <span className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</span>
+              </div>
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-destructive">
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        </div>
       </SidebarFooter>
     </Sidebar>
   )
