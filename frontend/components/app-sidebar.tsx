@@ -44,6 +44,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
+import ThemeToggle from "@/components/theme-toggle"
 
 const homeItems = [
   {
@@ -112,9 +113,7 @@ export function AppSidebar() {
             <p className="text-xs text-muted-foreground">Free</p>
           </div>
         </Link>
-        <Button variant="secondary" size="sm" className="mt-4 w-full" asChild>
-          <Link href="/dashboard">Back to dashboard</Link>
-        </Button>
+        
       </SidebarHeader>
 
       <SidebarContent>
@@ -219,7 +218,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <DropdownMenu>
+        <div className="flex items-center justify-between gap-2">
+          <ThemeToggle />
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-3 rounded-md p-2 hover:bg-sidebar-accent transition-colors">
               <Avatar className="h-8 w-8">
@@ -245,6 +246,7 @@ export function AppSidebar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
