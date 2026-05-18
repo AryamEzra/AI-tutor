@@ -15,12 +15,6 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX_NAME", "ai-tutor")
 
-# Groq models available (all free)
-GROQ_MODELS = {
-    "llama-3.3-70b": "llama-3.3-70b-versatile",
-    "llama-3.1-8b": "llama-3.1-8b-instant",
-    "mixtral-8x7b": "mixtral-8x7b-32768",
-    "gemma2-9b": "gemma2-9b-it",
-}
-
+# Groq models
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"  # free vision model on Groq

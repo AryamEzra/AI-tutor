@@ -15,28 +15,24 @@ class UserLogin(BaseModel):
     password: str
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+class ChatHistoryMessage(BaseModel):
+    role: str   # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[ChatHistoryMessage] = []
+
+
+class ChatResponse(BaseModel):
+    response: str
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 
 class APIKeyUpdate(BaseModel):
-    provider: str   # "groq"
+    provider: str
     api_key: str
-
-
-# ── Chat ──────────────────────────────────────────────────────────────────────
-
-class ChatMessage(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-    document_ids: Optional[list[str]] = None
-    model: Optional[str] = None   # allow frontend to pick Groq model
-
-
-class ChatResponse(BaseModel):
-    response: str
-    session_id: str
-    sources: list[dict] = []

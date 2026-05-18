@@ -1,5 +1,5 @@
 """
-Socratic Tutor API
+Socratic Tutor API v2
 """
 
 import fastapi
@@ -22,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(documents_router)
@@ -30,7 +29,6 @@ app.include_router(settings_router)
 app.include_router(analytics_router)
 
 
-# ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health() -> dict:
     return {

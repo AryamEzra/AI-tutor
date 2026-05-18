@@ -1,66 +1,159 @@
 """
-Groq service for chat completions.
-All models listed here are on Groq's free tier.
+Groq service — chat, generation, and vision (equation checking).
+All models used are on Groq's free tier.
 """
 
+import base64
 from fastapi import HTTPException
 from groq import Groq
 
-from config import DEFAULT_GROQ_MODEL
+from config import GROQ_API_KEY, DEFAULT_GROQ_MODEL, GROQ_VISION_MODEL
 
 
 AVAILABLE_MODELS = {
-    "llama-3.3-70b": "llama-3.3-70b-versatile",
-    "llama-3.1-8b": "llama-3.1-8b-instant",
-    "mixtral-8x7b": "mixtral-8x7b-32768",
-    "gemma2-9b": "gemma2-9b-it",
+    "llama-3.3-70b-versatile": "Default text model",
+    "meta-llama/llama-4-scout-17b-16e-instruct": "Vision model",
 }
 
 
-def build_socratic_prompt(user_message: str, context: str = "") -> list[dict]:
-    """Build messages array for Groq with Socratic tutor system prompt."""
-    system = (
-        "You are a Socratic tutor. Help students learn through guided questioning, "
-        "never by giving direct answers.\n\n"
-        "Rules:\n"
-        "1. Always respond with questions that guide the student toward the answer.\n"
-        "2. Ask clarifying questions to gauge what the student already knows.\n"
-        "3. Break complex topics into smaller questions.\n"
-        "4. Validate correct reasoning; gently redirect incorrect reasoning.\n"
-        "5. When document context is provided, base your questions on that material."
+def _client(api_key: str | None = None) -> Groq:
+    key = api_key or GROQ_API_KEY
+    if not key:
+        raise HTTPException(status_code=400, detail="No Groq API key configured.")
+    return Groq(api_key=key)
+
+
+# ── Socratic chat ─────────────────────────────────────────────────────────────
+
+SOCRATIC_SYSTEM = """You are a Socratic tutor. Guide students to answers through questions — never give direct answers.
+
+Rules:
+1. Always respond with questions that guide the student toward the answer.
+2. Ask clarifying questions to gauge what the student already knows.
+3. Break complex topics into smaller questions.
+4. Validate correct reasoning; gently redirect incorrect reasoning.
+5. When document context is provided, base your questions on that material."""
+
+
+async def socratic_chat(
+    message: str,
+    history: list[dict],
+    context: str = "",
+    api_key: str | None = None,
+) -> str:
+    client = _client(api_key)
+
+    system = SOCRATIC_SYSTEM
+    if context:
+        system += f"\n\nRelevant document context:\n{context}"
+
+    messages = [{"role": "system", "content": system}]
+    for h in history:
+        messages.append({"role": h["role"], "content": h["content"]})
+    messages.append({"role": "user", "content": message})
+
+    response = client.chat.completions.create(
+        model=DEFAULT_GROQ_MODEL,
+        messages=messages,
+        max_tokens=1024,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
+
+
+# ── Document generation helpers ───────────────────────────────────────────────
+
+def _generate(prompt: str, api_key: str | None = None, max_tokens: int = 2048) -> str:
+    client = _client(api_key)
+    response = client.chat.completions.create(
+        model=DEFAULT_GROQ_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=max_tokens,
+        temperature=0.5,
+    )
+    return response.choices[0].message.content
+
+
+def generate_exam(text: str, num_questions: int = 5, instructions: str = "", api_key: str | None = None) -> str:
+    prompt = f"""Based on the following document, generate {num_questions} exam questions with answers.
+{'Additional instructions: ' + instructions if instructions else ''}
+
+Format each question as:
+Q1: [question]
+A1: [answer]
+
+Document:
+{text[:6000]}"""
+    return _generate(prompt, api_key)
+
+
+def generate_notes(text: str, instructions: str = "", api_key: str | None = None) -> str:
+    prompt = f"""Create concise, well-structured study notes from the following document.
+{'Additional instructions: ' + instructions if instructions else ''}
+Use bullet points and clear headings. Focus on key concepts, definitions, and important facts.
+
+Document:
+{text[:6000]}"""
+    return _generate(prompt, api_key)
+
+
+def generate_flashcards(text: str, instructions: str = "", api_key: str | None = None) -> list[dict]:
+    prompt = f"""Create flashcards from the following document.
+{'Additional instructions: ' + instructions if instructions else ''}
+
+Return ONLY a JSON array like this (no markdown, no explanation):
+[{{"front": "question or term", "back": "answer or definition"}}, ...]
+
+Generate at least 8 flashcards. Document:
+{text[:6000]}"""
+    raw = _generate(prompt, api_key)
+    import json, re
+    # strip markdown fences if present
+    raw = re.sub(r"```json|```", "", raw).strip()
+    try:
+        return json.loads(raw)
+    except Exception:
+        return [{"front": "Error parsing flashcards", "back": raw[:200]}]
+
+
+# ── Vision — equation checker ─────────────────────────────────────────────────
+
+def check_equation(image_bytes: bytes, mime_type: str = "image/jpeg", api_key: str | None = None) -> dict:
+    client = _client(api_key)
+    b64 = base64.b64encode(image_bytes).decode()
+
+    response = client.chat.completions.create(
+        model=GROQ_VISION_MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{b64}"},
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            "You are a Socratic math tutor. Look at this equation or math problem.\n\n"
+                            "1. State whether it is correct or incorrect.\n"
+                            "2. If incorrect, do NOT give the answer directly. Instead, ask Socratic questions "
+                            "that guide the student to find their own mistake.\n"
+                            "3. Provide a step-by-step solution breakdown as hints, ending each step with a "
+                            "question that prompts the student to verify their work.\n\n"
+                            "Respond in JSON: {\"is_correct\": bool, \"feedback\": \"...\", \"socratic_steps\": [\"...\"]}"
+                        ),
+                    },
+                ],
+            }
+        ],
+        max_tokens=1024,
     )
 
-    user_content = user_message
-    if context:
-        user_content = (
-            f"Relevant context from my documents:\n{context}\n\n"
-            f"My question: {user_message}"
-        )
-
-    return [
-        {"role": "system", "content": system},
-        {"role": "user", "content": user_content},
-    ]
-
-
-async def chat_completion(
-    user_message: str,
-    api_key: str,
-    context: str = "",
-    model: str | None = None,
-) -> str:
-    """Call Groq and return the assistant reply."""
-    model_id = AVAILABLE_MODELS.get(model or "", DEFAULT_GROQ_MODEL)
-
+    import json, re
+    raw = response.choices[0].message.content
+    raw = re.sub(r"```json|```", "", raw).strip()
     try:
-        client = Groq(api_key=api_key)
-        messages = build_socratic_prompt(user_message, context)
-        response = client.chat.completions.create(
-            model=model_id,
-            messages=messages,
-            max_tokens=1024,
-            temperature=0.7,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Groq error: {str(e)}")
+        return json.loads(raw)
+    except Exception:
+        return {"is_correct": None, "feedback": raw, "socratic_steps": []}

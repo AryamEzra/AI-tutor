@@ -1,15 +1,8 @@
-from fastapi import APIRouter, Depends
-
-from auth import (
-    create_access_token,
-    hash_password,
-    require_auth,
-    users_db,
-    verify_password,
-)
-from models import UserCreate, UserLogin
-from fastapi import HTTPException
 from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
+
+from auth import create_access_token, hash_password, require_auth, users_db, verify_password
+from models import UserCreate, UserLogin
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,9 +18,11 @@ async def register(user: UserCreate) -> dict:
         "name": user.name or user.email.split("@")[0],
         "created_at": datetime.utcnow().isoformat(),
     }
-
     token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "user": {"email": user.email, "name": users_db[user.email]["name"]},
+    }
 
 
 @router.post("/login")
@@ -37,13 +32,12 @@ async def login(user: UserLogin) -> dict:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "user": {"email": db_user["email"], "name": db_user["name"]},
+    }
 
 
 @router.get("/me")
 async def get_me(user: dict = Depends(require_auth)) -> dict:
-    return {
-        "email": user["email"],
-        "name": user["name"],
-        "created_at": user["created_at"],
-    }
+    return {"email": user["email"], "name": user["name"], "created_at": user["created_at"]}

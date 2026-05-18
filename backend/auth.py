@@ -10,7 +10,7 @@ from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 
 security = HTTPBearer(auto_error=False)
 
-# In-memory user store (swap for a real DB in production)
+# In-memory stores (swap for a real DB in production)
 users_db: dict = {}
 
 
