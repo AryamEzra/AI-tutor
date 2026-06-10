@@ -36,6 +36,9 @@ app.include_router(knowledge_base_router)
 app.include_router(settings_router)
 app.include_router(analytics_router)
 
+@app.get("/")
+async def root():
+    return {"message": "Socratic Tutor API v2"}
 
 @app.get("/health")
 async def health() -> dict:
