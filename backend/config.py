@@ -13,7 +13,11 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # Pinecone
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX_NAME", "ai-tutor")
+PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX_NAME", "ai-tutor-1024")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "multilingual-e5-large")
+
+# Local metadata database path
+DATABASE_PATH = os.environ.get("DATABASE_PATH", "./backend/kb_metadata.sqlite")
 
 # Groq models
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"

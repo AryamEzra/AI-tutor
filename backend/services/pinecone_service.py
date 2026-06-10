@@ -6,7 +6,7 @@ Model: multilingual-e5-large (free, no separate embeddings provider needed).
 from typing import Optional
 from pinecone import Pinecone
 
-from config import PINECONE_API_KEY, PINECONE_INDEX_NAME
+from config import PINECONE_API_KEY, PINECONE_INDEX_NAME, EMBEDDING_MODEL
 
 _pc: Optional[Pinecone] = None
 _index = None
@@ -40,7 +40,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a list of texts using Pinecone inference API."""
     pc, _ = get_pinecone()
     result = pc.inference.embed(
-        model="multilingual-e5-large",
+        model=EMBEDDING_MODEL,
         inputs=texts,
         parameters={"input_type": "passage", "truncate": "END"},
     )
@@ -51,7 +51,7 @@ def embed_query(query: str) -> list[float]:
     """Embed a single query string."""
     pc, _ = get_pinecone()
     result = pc.inference.embed(
-        model="multilingual-e5-large",
+        model=EMBEDDING_MODEL,
         inputs=[query],
         parameters={"input_type": "query", "truncate": "END"},
     )

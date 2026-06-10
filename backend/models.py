@@ -36,3 +36,15 @@ class ChatResponse(BaseModel):
 class APIKeyUpdate(BaseModel):
     provider: str
     api_key: str
+
+
+# ── Knowledge Base ───────────────────────────────────────────────────────────
+
+class KnowledgeBaseDocument(BaseModel):
+    id: str
+    user_email: str
+    filename: str
+    created_at: str
+    size: int
+    chunks: int
+    metadata: Optional[dict] = None
