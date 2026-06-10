@@ -3,21 +3,19 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useAuth } from '@/lib/auth-context'
-import { generateShortNotes } from '@/lib/api'
+import { generateAudio } from '@/lib/api'
 import { KnowledgeBaseDialog } from '@/components/knowledge-base-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Upload, FileText, X } from 'lucide-react'
+import { Upload, FileText, X, Play, Download } from 'lucide-react'
 
-export default function ShortNotesGeneratorPage() {
+export default function AudioGeneratorPage() {
   const { token } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
-  const [instructions, setInstructions] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [notes, setNotes] = useState<string | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -46,13 +44,13 @@ export default function ShortNotesGeneratorPage() {
     setSelectedDocId(docId)
     setFile(null)
     setIsLoading(true)
-    setNotes(null)
+    setAudioUrl(null)
 
     try {
-      const result = await generateShortNotes(docId, instructions, token, true)
-      setNotes(result.content)
+      const result = await generateAudio(docId, token, true)
+      setAudioUrl(result.audio_url)
     } catch (error) {
-      console.error('Failed to generate notes:', error)
+      console.error('Failed to generate audio:', error)
     } finally {
       setIsLoading(false)
     }
@@ -62,13 +60,13 @@ export default function ShortNotesGeneratorPage() {
     if (!file || !token) return
 
     setIsLoading(true)
-    setNotes(null)
+    setAudioUrl(null)
 
     try {
-      const result = await generateShortNotes(file, instructions, token)
-      setNotes(result.content)
+      const result = await generateAudio(file, token)
+      setAudioUrl(result.audio_url)
     } catch (error) {
-      console.error('Failed to generate notes:', error)
+      console.error('Failed to generate audio:', error)
     } finally {
       setIsLoading(false)
     }
@@ -78,9 +76,9 @@ export default function ShortNotesGeneratorPage() {
     <div className="mx-auto max-w-4xl">
       <Card>
         <CardHeader>
-          <CardTitle>Create Short Notes</CardTitle>
+          <CardTitle>Generate Audio</CardTitle>
           <CardDescription>
-            Upload a file or select from your knowledge base to generate short notes
+            Upload a file or select from your knowledge base to generate audio
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -137,23 +135,6 @@ export default function ShortNotesGeneratorPage() {
             </div>
           </div>
 
-          {/* Special Instructions */}
-          <div className="flex flex-col gap-2">
-            <Label className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Special Instructions
-            </Label>
-            <Textarea
-              placeholder="E.g., Focus on chapter 3, include definitions, make it concise..."
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              rows={4}
-            />
-            <p className="text-sm text-muted-foreground">
-              Optional: Add any specific instructions or focus areas.
-            </p>
-          </div>
-
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
@@ -161,7 +142,7 @@ export default function ShortNotesGeneratorPage() {
             className="w-full bg-slate-600 hover:bg-slate-700"
             size="lg"
           >
-            {isLoading ? 'Generating...' : 'Generate Short Notes'}
+            {isLoading ? 'Generating...' : 'Generate Audio'}
           </Button>
           {!file && !selectedDocId && (
             <p className="text-center text-sm text-muted-foreground">
@@ -171,20 +152,26 @@ export default function ShortNotesGeneratorPage() {
         </CardContent>
       </Card>
 
-      {/* Generated Notes */}
-      {notes && (
+      {/* Audio Player */}
+      {audioUrl && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Generated Notes</CardTitle>
+            <CardTitle>Your Audiobook</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="prose dark:prose-invert max-w-none">
-              {notes.split('\n').map((line, idx) => (
-                <p key={idx} className="mb-2 whitespace-pre-wrap text-foreground">
-                  {line}
-                </p>
-              ))}
-            </div>
+          <CardContent className="flex flex-col gap-4">
+            <audio
+              controls
+              className="w-full"
+              src={audioUrl}
+            >
+              Your browser does not support the audio element.
+            </audio>
+            <a href={audioUrl} download>
+              <Button className="w-full gap-2" variant="outline">
+                <Download className="h-4 w-4" />
+                Download Audio
+              </Button>
+            </a>
           </CardContent>
         </Card>
       )}

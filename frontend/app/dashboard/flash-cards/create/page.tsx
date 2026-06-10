@@ -3,21 +3,29 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useAuth } from '@/lib/auth-context'
-import { generateShortNotes } from '@/lib/api'
+import { generateFlashCards } from '@/lib/api'
 import { KnowledgeBaseDialog } from '@/components/knowledge-base-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Upload, FileText, X } from 'lucide-react'
+import { Upload, FileText, X, RotateCw } from 'lucide-react'
 
-export default function ShortNotesGeneratorPage() {
+interface FlashCard {
+  id: string
+  front: string
+  back: string
+}
+
+export default function FlashCardsGeneratorPage() {
   const { token } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [instructions, setInstructions] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [notes, setNotes] = useState<string | null>(null)
+  const [flashCards, setFlashCards] = useState<FlashCard[] | null>(null)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+  const [isFlipped, setIsFlipped] = useState(false)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -46,13 +54,15 @@ export default function ShortNotesGeneratorPage() {
     setSelectedDocId(docId)
     setFile(null)
     setIsLoading(true)
-    setNotes(null)
+    setFlashCards(null)
+    setCurrentCardIndex(0)
+    setIsFlipped(false)
 
     try {
-      const result = await generateShortNotes(docId, instructions, token, true)
-      setNotes(result.content)
+      const result = await generateFlashCards(docId, instructions, token, true)
+      setFlashCards(result.cards)
     } catch (error) {
-      console.error('Failed to generate notes:', error)
+      console.error('Failed to generate flashcards:', error)
     } finally {
       setIsLoading(false)
     }
@@ -62,13 +72,15 @@ export default function ShortNotesGeneratorPage() {
     if (!file || !token) return
 
     setIsLoading(true)
-    setNotes(null)
+    setFlashCards(null)
+    setCurrentCardIndex(0)
+    setIsFlipped(false)
 
     try {
-      const result = await generateShortNotes(file, instructions, token)
-      setNotes(result.content)
+      const result = await generateFlashCards(file, instructions, token)
+      setFlashCards(result.cards)
     } catch (error) {
-      console.error('Failed to generate notes:', error)
+      console.error('Failed to generate flashcards:', error)
     } finally {
       setIsLoading(false)
     }
@@ -78,9 +90,9 @@ export default function ShortNotesGeneratorPage() {
     <div className="mx-auto max-w-4xl">
       <Card>
         <CardHeader>
-          <CardTitle>Create Short Notes</CardTitle>
+          <CardTitle>Create Flash Cards</CardTitle>
           <CardDescription>
-            Upload a file or select from your knowledge base to generate short notes
+            Upload a file or select from your knowledge base to generate flashcards
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -144,13 +156,13 @@ export default function ShortNotesGeneratorPage() {
               Special Instructions
             </Label>
             <Textarea
-              placeholder="E.g., Focus on chapter 3, include definitions, make it concise..."
+              placeholder="E.g., Focus on definitions, medical terms, vocabulary..."
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               rows={4}
             />
             <p className="text-sm text-muted-foreground">
-              Optional: Add any specific instructions or focus areas.
+              Optional: Add any specific instructions for the flashcards.
             </p>
           </div>
 
@@ -161,7 +173,7 @@ export default function ShortNotesGeneratorPage() {
             className="w-full bg-slate-600 hover:bg-slate-700"
             size="lg"
           >
-            {isLoading ? 'Generating...' : 'Generate Short Notes'}
+            {isLoading ? 'Generating...' : 'Generate Flash Cards'}
           </Button>
           {!file && !selectedDocId && (
             <p className="text-center text-sm text-muted-foreground">
@@ -171,19 +183,58 @@ export default function ShortNotesGeneratorPage() {
         </CardContent>
       </Card>
 
-      {/* Generated Notes */}
-      {notes && (
+      {/* Flash Card Display */}
+      {flashCards && flashCards.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Generated Notes</CardTitle>
+            <CardTitle>Study Flash Cards</CardTitle>
+            <CardDescription>
+              Card {currentCardIndex + 1} of {flashCards.length}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="prose dark:prose-invert max-w-none">
-              {notes.split('\n').map((line, idx) => (
-                <p key={idx} className="mb-2 whitespace-pre-wrap text-foreground">
-                  {line}
-                </p>
-              ))}
+          <CardContent className="flex flex-col gap-6">
+            {/* Card Flipper */}
+            <div
+              className="min-h-72 cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-all hover:border-primary"
+              onClick={() => setIsFlipped(!isFlipped)}
+            >
+              <div className="flex h-full items-center justify-center">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {isFlipped ? 'Answer' : 'Question'}
+                  </p>
+                  <p className="text-2xl font-semibold">
+                    {isFlipped ? flashCards[currentCardIndex].back : flashCards[currentCardIndex].front}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-4">Click to flip</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentCardIndex(Math.max(0, currentCardIndex - 1))}
+                disabled={currentCardIndex === 0}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsFlipped(!isFlipped)}
+                className="gap-2"
+              >
+                <RotateCw className="h-4 w-4" />
+                Flip
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentCardIndex(Math.min(flashCards.length - 1, currentCardIndex + 1))}
+                disabled={currentCardIndex === flashCards.length - 1}
+              >
+                Next
+              </Button>
             </div>
           </CardContent>
         </Card>
